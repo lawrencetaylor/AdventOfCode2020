@@ -2,6 +2,7 @@
 
 module Advent.Parsing(
   pInt
+  , pNat
   , pDay
   , pDayLines) where
 
@@ -50,6 +51,11 @@ pDigits = (fmap . fmap) digitToInt $ many1 digit
 
 arrayToInt :: [Int] -> Int
 arrayToInt = foldl (\a b -> b + 10*a) 0
+
+{- Parses a natural number to integer. -}
+pNat :: Parser Int
+pNat = fmap arrayToInt $ pDigits
+
 
 {- Parses a positive or negative integer. -}
 pInt :: Parser Int
