@@ -4,10 +4,11 @@ module Advent.Parsing(
   pInt
   , pNat
   , pDay
-  , pDayLines) where
+  , pDayLines
+  , readDay) where
 
 import           Data.Char                     (digitToInt)
-import           Text.Parsec                   (digit,many1, parse)
+import           Text.Parsec                   (digit, many1, parse)
 import           Text.Parsec.Char              (char)
 import           Text.Parsec.Combinator        (option)
 import           Text.ParserCombinators.Parsec (Parser)
@@ -24,21 +25,21 @@ readDayLines :: Int -> IO [String]
 readDayLines = fmap lines . readDay
 
 parseWith :: Parser a -> String -> a
-parseWith p str = 
+parseWith p str =
   case parse p [] str of
     Right a -> a
-    Left e -> error $ show e
+    Left e  -> error $ show e
 
 {- Parses the contents of the input file for
 a given day, using the specified parser on the entire
 contents of the file. -}
 pDay :: Int -> Parser a -> IO a
-pDay day parser = do 
-  dayContents <- readDay day 
+pDay day parser = do
+  dayContents <- readDay day
   return $ parseWith parser dayContents
 
 {- Parses the contents of the input file for
-a given day, using the specified parser on each of the 
+a given day, using the specified parser on each of the
 lines. -}
 pDayLines :: Int -> Parser a -> IO [a]
 pDayLines day parser = do
@@ -55,7 +56,6 @@ arrayToInt = foldl (\a b -> b + 10*a) 0
 {- Parses a natural number to integer. -}
 pNat :: Parser Int
 pNat = fmap arrayToInt $ pDigits
-
 
 {- Parses a positive or negative integer. -}
 pInt :: Parser Int
