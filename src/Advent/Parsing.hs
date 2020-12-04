@@ -5,10 +5,14 @@ module Advent.Parsing(
   , pNat
   , pDay
   , pDayLines
-  , readDay) where
+  , readDay
+  , pDaySepBy
+  , parseWith
+  , (.>>)
+  , (.>>.)) where
 
 import           Data.Char                     (digitToInt)
-import           Text.Parsec                   (digit, many1, parse)
+import           Text.Parsec                   (digit, many1, parse, sepBy)
 import           Text.Parsec.Char              (char)
 import           Text.Parsec.Combinator        (option)
 import           Text.ParserCombinators.Parsec (Parser)
@@ -37,6 +41,11 @@ pDay :: Int -> Parser a -> IO a
 pDay day parser = do
   dayContents <- readDay day
   return $ parseWith parser dayContents
+
+pDaySepBy :: Int -> Parser a ->  Parser ()  -> IO [a]
+pDaySepBy day parser seperator = do
+  dayContents <- readDay day
+  return $ parseWith (sepBy parser seperator) dayContents
 
 {- Parses the contents of the input file for
 a given day, using the specified parser on each of the
@@ -67,3 +76,19 @@ pInt = do
     toInt :: Char -> Int
     toInt '+' = 1
     toInt '-' = -1
+
+(.>>) :: Parser a -> Parser b -> Parser a
+(.>>) pA  pB = do
+  a <- pA
+  _ <- pB
+  return a
+
+(.>>.) :: Parser a -> Parser b -> Parser (a, b)
+(.>>.) pA  pB = do
+  a <- pA
+  b <- pB
+  return (a, b)
+
+
+
+
