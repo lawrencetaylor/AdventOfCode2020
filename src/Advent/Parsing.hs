@@ -6,6 +6,7 @@ module Advent.Parsing(
   , pDay
   , pDayLines
   , readDay
+  , readDayLines
   , pDaySepBy
   , parseWith
   , (.>>)
