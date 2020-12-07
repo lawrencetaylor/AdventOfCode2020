@@ -10,7 +10,8 @@ module Advent.Parsing(
   , pDaySepBy
   , parseWith
   , (.>>)
-  , (.>>.)) where
+  , (.>>.)
+  , (>>.)) where
 
 import           Data.Char                     (digitToInt)
 import           Text.Parsec                   (digit, many1, parse, sepBy)
@@ -78,17 +79,17 @@ pInt = do
     toInt '+' = 1
     toInt '-' = -1
 
-(.>>) :: Parser a -> Parser b -> Parser a
-(.>>) pA  pB = do
-  a <- pA
-  _ <- pB
-  return a
-
 (.>>.) :: Parser a -> Parser b -> Parser (a, b)
 (.>>.) pA  pB = do
   a <- pA
   b <- pB
   return (a, b)
+
+(.>>) :: Parser a -> Parser b -> Parser a
+(.>>) a b = fst <$> a .>>. b
+
+(>>.) :: Parser a -> Parser b -> Parser b
+(>>.) a b = snd <$> a .>>. b
 
 
 
