@@ -18,6 +18,7 @@ import           Text.Parsec                   (digit, many1, parse, sepBy)
 import           Text.Parsec.Char              (char)
 import           Text.Parsec.Combinator        (option)
 import           Text.ParserCombinators.Parsec (Parser)
+import Control.Applicative
 
 dayFileName :: Int -> String
 dayFileName day
@@ -59,20 +60,20 @@ pDayLines day parser = do
   return parsedLines
 
 pDigits :: Parser [Int]
-pDigits = (fmap . fmap) digitToInt $ many1 digit
+pDigits = fmap digitToInt <$> many1 digit
 
 arrayToInt :: [Int] -> Int
 arrayToInt = foldl (\a b -> b + 10*a) 0
 
 {- Parses a natural number to integer. -}
 pNat :: Parser Int
-pNat = fmap arrayToInt $ pDigits
+pNat = arrayToInt <$> pDigits
 
 {- Parses a positive or negative integer. -}
 pInt :: Parser Int
 pInt = do
-  multiplier <- toInt <$> (option '+' $ char '-')
-  value <- fmap arrayToInt $ pDigits
+  multiplier <- toInt <$> option '+' (char '-' <|> char '+')
+  value <- arrayToInt <$> pDigits
   return $ multiplier * value
   where
     toInt :: Char -> Int
