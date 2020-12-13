@@ -26,7 +26,7 @@ Positions on the grid are given by :
 The use of Sum in the second position argument ensures that both co-ordinate
 types describing position are Semi Groups, so we can apply translations.
 -}
-type CylinderGrid = G.Grid Mod (Sum Int)
+type CylinderGrid = G.Grid (Mod Int) (Sum Int)
 
 toCylinderGrid :: Grid -> (Int, CylinderGrid)
 toCylinderGrid grid =
@@ -43,7 +43,7 @@ path :: (Ord a, Ord b, Semigroup a, Semigroup b) => G.Grid a b -> Vector a b -> 
 path grid shift  = unfoldr (nextPosition shift grid)
   where nextPosition shift grid pos = (,pos <> shift) <$> grid !? pos
 
-treeCount :: (Ord b, Semigroup b, Num b) => G.Grid Mod b -> Vector Int b -> Int -> Int
+treeCount :: (Ord b, Semigroup b, Num b) => G.Grid (Mod Int) b -> Vector Int b -> Int -> Int
 treeCount cylinder (Vector x y) n  = 
   length $ 
   filter ('#' ==) $ 
