@@ -24,6 +24,10 @@ dependencies:
 - parsec-numbers
 - containers
 - hspec
+- mtl
+- megaparsec
+- parser-combinators
+- text
 
 library:
   source-dirs: src
