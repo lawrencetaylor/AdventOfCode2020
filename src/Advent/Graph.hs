@@ -2,28 +2,12 @@ module Advent.Graph(
   bfs
   ) where
 
-import qualified Data.List  as L
-import qualified Data.Maybe as M
-import qualified Data.Set   as S
+import           Advent.Queue (Queue (Queue))
+import qualified Advent.Queue as Queue
+import qualified Data.List    as List
+import qualified Data.Maybe   as Maybe
+import qualified Data.Set     as Set
 
-newtype Queue a =
-  Queue [a]
-  deriving (Show)
-
-push :: a -> Queue a -> Queue a
-push a (Queue q) = Queue (q ++ [a])
-
-pushAll :: [a] -> Queue a -> Queue a
-pushAll la q = foldr push q (reverse la)
-
-pop :: Queue a -> Maybe (a, Queue a)
-pop (Queue q) =
-  case q of
-    []     -> Nothing
-    (x:xs) -> Just (x, Queue xs)
-
-instance Foldable Queue where
-  foldMap f (Queue q) = foldMap f (reverse q)
 
 {-|
 Conducts a breadth-first search on a graph
@@ -37,14 +21,14 @@ bfs
   next
   rep
   a =
-  M.catMaybes $
-  L.unfoldr (bfsUnfold next) (S.empty, Queue [a])
+  Maybe.catMaybes $
+  List.unfoldr (bfsUnfold next) (Set.empty, Queue [a])
   where
     bfsUnfold next (seen, q) =
-      case pop q of
+      case Queue.pop q of
         Nothing -> Nothing
         Just (p, qs) ->
-          if rep p `S.member` seen then
+          if rep p `Set.member` seen then
             Just (Nothing, (seen, qs))
           else
-              Just (Just p, (S.insert (rep p) seen, pushAll (next p) qs))
+              Just (Just p, (Set.insert (rep p) seen, Queue.pushAll (next p) qs))
