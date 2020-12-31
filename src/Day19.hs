@@ -1,59 +1,88 @@
 module Day19 where
 
+import           Advent.Parsing                (pInt, parseWith, readDayLines,
+                                                (.>>), (.>>.), (>>.))
+import           Control.Applicative           (Alternative ((<|>)))
+import           Control.Monad                 (guard)
+import           Data.Either                   (isRight)
+import           Data.List                     ((\\), elemIndex)
+import           Data.Map                      (Map)
+import qualified Data.Map                      as Map
+import           Text.ParserCombinators.Parsec (eof, Parser, State (stateInput),
+                                                char, getParserState, letter,
+                                                many1, parse, space, string,
+                                                try)
 
-import Text.ParserCombinators.Parsec (many1, eof,  try, string, space, sepBy, letter, char, Parser)
-import Advent.Parsing(readDayLines, (.>>.), (.>>), pInt, (>>.), parseWith)
-import Data.Map (Map)
-import qualified Data.Map.Strict as Map
-import Data.Maybe (mapMaybe)
-import Control.Applicative (Alternative((<|>)))
-import Data.List (intercalate, elemIndex)
+data Rule = Char Char
+  | And Rule Rule
+  | Or Rule Rule
+  | Lookup Int
+  deriving(Show, Eq)
 
-test = 
-  [ "0: 1 2"
-  , "1: \"a\""
-  , "2: 1 3 | 3 1"
-  , "3: \"b\"" ]
-
-type Sequence = [Int]
-
-data Rule = 
-  Character Char 
-  | Sequence [Int] deriving (Show) 
-
-type Rules = Map Int [Rule]
-
-pCharacter :: Parser [Rule]
-pCharacter = fmap (: []) Character <$> (char '\"' >>. letter)
-
-pSequence :: Parser Rule
-pSequence = Sequence <$> many1 (pInt .>> (() <$ space <|> eof))
-
-pSequences :: Parser [Rule]
-pSequences = sepBy (try pSequence) (try $ string "| ")
-
-pRule :: Parser (Int, [Rule])
-pRule = pInt .>> string ": "  .>>. (pCharacter <|> pSequences)
-
-pRules :: [String] -> Rules
-pRules = Map.fromList . fmap (parseWith pRule)
-
-isValid :: Rules -> [Rule] -> String ->  Maybe String
-isValid rules [Character c] (x:xs) = if x == c then  Just xs else Nothing
-isValid rules [] x  = Just x
-isValid rules [Sequence []] x  = Just x
-isValid rules [Sequence (r:rs)] x  = isValid rules (rules Map.! r) x >>= isValid rules [Sequence rs]
-isValid rules ruleSet x  = foldl1 (<|>) $ fmap (\r -> isValid rules [r] x) ruleSet
-
-partOne :: Rules -> [String] -> Int
-partOne rules  = length . filter check
+pRule :: Parser (Int, Rule)
+pRule = pInt .>> string ": "  .>>. (pChar <|> try pOr <|> try pAnd <|> pLookup)
   where
-    check str = isValid rules (rules Map.! 0) str == Just ""
+    pChar = Char <$> char '\"' >>. letter
+    pLookup = Lookup <$> pInt
+    pAnd = uncurry And <$> pLookup .>> space .>>. pLookup
+    pAndOrLookup = try pAnd <|> pLookup
+    pOr = uncurry Or <$> pAndOrLookup .>> string " | " .>>. pAndOrLookup
+
+readMap :: [String] -> Map Int Rule
+readMap = Map.fromList . fmap (parseWith pRule)
+
+createParser :: Map Int Rule -> Rule -> Parser ()
+createParser m (Char c)   = () <$ char c
+createParser m (Lookup x) = createParser m (m Map.! x)
+createParser m (And x y)  = createParser m x >> createParser m y
+createParser m (Or x y)   = try (createParser m x) <|> createParser m y
+
+satisfies :: Parser () -> String -> Bool
+satisfies p = isRight . parse (p .>> eof) []
+
+partOne :: Map Int Rule -> [String] -> Int
+partOne rules = length . filter (satisfies r0)
+  where
+    r0 = createParser rules (Lookup 0)
+
+{-|
+0th Rule is Or (Lookup 8) (Lookup 11)
+
+Rule 8: Matches 1 or more of rule 42
+Rule 11 matches "n times" Rule 42 followed by "n times" Rule 31
+
+To check if Rule 0 is satisfied we need to:
+
+* Find humber of consecutive matches of rule 42 (n)
+* Find number of consecutive matches of rule 31 (m)
+* Check that N > M.
+
+-}
+
+partTwo :: Map Int Rule -> [String] -> Int
+partTwo rules =  length . filter matches8Or11
+  where
+
+    p42 = try $ createParser rules (Lookup 42)
+    p31 = createParser rules (Lookup 31)
+
+    p8Or11Result = do
+      n <- length <$> many1 p42
+      m <- length <$> many1 p31
+
+      return $ n > m
+
+    matches8Or11 s = 
+      case parse (p8Or11Result .>> eof) [] s of
+      Right b -> b
+      Left _ -> False
 
 main :: IO ()
 main = do
   lines <- readDayLines 19
   let Just splitter = elemIndex  "" lines
-  let (rules, _:samples) = splitAt splitter lines
-  let ruleLookup = pRules rules
-  putStrLn $ "Part One: " ++ show ( partOne ruleLookup samples)
+      (rules, _:samples) = splitAt splitter lines
+      ruleLookup = readMap rules
+
+  putStrLn $ "Part One: " ++ show (partOne ruleLookup samples)
+  putStrLn $ "Part Two: " ++ show (partTwo ruleLookup samples)
