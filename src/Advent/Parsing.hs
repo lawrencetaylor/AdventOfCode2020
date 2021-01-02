@@ -2,6 +2,7 @@
 
 module Advent.Parsing(
   pInt
+  , pDigits
   , pNat
   , pDay
   , pDayLines
@@ -9,15 +10,16 @@ module Advent.Parsing(
   , readDayLines
   , pDaySepBy
   , parseWith
+  , tryParse
   , (.>>)
   , (.>>.)
   , (>>.)) where
 
 import           Data.Char                     (digitToInt)
-import           Text.Parsec                   (digit, many1, parse, sepBy)
+import           Text.Parsec                   (getParserState, digit, many1, parse, sepBy)
 import           Text.Parsec.Char              (char)
 import           Text.Parsec.Combinator        (option)
-import           Text.ParserCombinators.Parsec (Parser)
+import           Text.ParserCombinators.Parsec (State(stateInput), Parser)
 import Control.Applicative
 
 dayFileName :: Int -> String
@@ -36,6 +38,19 @@ parseWith p str =
   case parse p [] str of
     Right a -> a
     Left e  -> error $ show e
+
+tryParse :: Parser a -> String -> Maybe a
+tryParse p str =
+  case parse p [] str of
+    Right a -> Just a
+    Left e  -> Nothing
+
+pUnprocessed :: Parser String
+pUnprocessed= do
+  s <- getParserState
+  let out = stateInput s
+  return out
+    
 
 {- Parses the contents of the input file for
 a given day, using the specified parser on the entire

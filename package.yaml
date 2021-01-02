@@ -28,6 +28,9 @@ dependencies:
 - megaparsec
 - parser-combinators
 - text
+- split
+- vector
+- array
 
 library:
   source-dirs: src
